@@ -55,10 +55,11 @@ class LitellmModel:
 
     def query(self, messages: list[dict[str, str]], **kwargs) -> dict:
         response = self._query(messages, **kwargs)
-        cost = litellm.cost_calculator.completion_cost(response)
+        # cost = litellm.cost_calculator.completion_cost(response)  # コスト計算を無効化
         self.n_calls += 1
-        self.cost += cost
-        GLOBAL_MODEL_STATS.add(cost)
+        # self.cost += cost  # コスト追加を無効化
+        # GLOBAL_MODEL_STATS.add(cost)  # グローバル統計への追加を無効化
+        GLOBAL_MODEL_STATS.add(0)  # コスト0で追加（呼び出し回数のみカウント）
         return {
             "content": response.choices[0].message.content or "",  # type: ignore
         }
