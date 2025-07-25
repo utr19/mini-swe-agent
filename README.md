@@ -4,6 +4,28 @@
 
 <h1>The 100 line AI agent that solves GitHub issues & more</h1>
 
+> **Note**: This is a fork of [SWE-agent/mini-swe-agent](https://github.com/SWE-agent/mini-swe-agent) with modifications to support Groq's new models including `moonshotai/kimi-k2-instruct`.
+
+## Changes from Original
+
+- **Disabled cost calculation** to enable compatibility with new Groq models that are not yet supported by LiteLLM's cost calculator
+- **Added support for moonshotai/kimi-k2-instruct** and other Groq models without cost tracking issues
+- All functionality remains the same, only cost tracking is set to $0.00
+
+## Usage with Groq Kimi-K2
+
+```bash
+# Set your Groq API key
+export GROQ_API_KEY="your-groq-api-key"
+
+# Run with Kimi-K2 model
+uv run mini -m groq/moonshotai/kimi-k2-instruct
+
+# Or install and run
+pip install -e .
+mini -m groq/moonshotai/kimi-k2-instruct
+```
+
 [![Docs](https://img.shields.io/badge/Docs-green?style=for-the-badge&logo=materialformkdocs&logoColor=white)](https://mini-swe-agent.com/latest/)
 [![Slack](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white)](https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s-o3_yXPZbaH2wVnxnss1EkQ)
 [![PyPI - Version](https://img.shields.io/pypi/v/mini-swe-agent?style=for-the-badge&logo=python&logoColor=white&labelColor=black&color=deeppink)](https://pypi.org/project/mini-swe-agent/)
