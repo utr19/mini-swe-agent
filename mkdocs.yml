@@ -1,5 +1,5 @@
 site_name: mini-SWE-agent documentation
-# site_url: https://mini-swe-agent.com
+site_url: https://mini-swe-agent.com
 theme:
   name: material
   icon:
@@ -65,6 +65,7 @@ nav:
       - "Inspector": usage/inspector.md
     - "Advanced":
       - "Configuration": advanced/configuration.md
+      - "Local models": advanced/local_models.md
       - "Control flow": advanced/control_flow.md
       - "Cookbook": advanced/cookbook.md
     - "FAQ": faq.md
@@ -125,8 +126,10 @@ repo_name: SWE-agent/mini-SWE-agent
 edit_uri: edit/main/docs/
 extra_javascript:
   - assets/js/sh-annotation.js
+  - assets/js/gif-controls.js
 extra_css:
   - assets/custom.css
+  - assets/gif-controls.css
   - assets/mkdocstrings.css
   - assets/image_theme.css
   - assets/bubbles.css

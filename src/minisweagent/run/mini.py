@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 
-"""Run mini-SWE-agent in your local environment.
-
-[not dim]
-There are two different user interfaces:
-
-[bold green]mini[/bold green] Simple REPL-style interface
-[bold green]mini -v[/bold green] Pager-style interface (Textual)
-
-More information about the usage: [bold green]https://mini-swe-agent.com/latest/usage/mini/[/bold green]
-[/not dim]
-"""
+"""Run mini-SWE-agent in your local environment. This is the default executable `mini`."""
+# Read this first: https://mini-swe-agent.com/latest/usage/mini/  (usage)
 
 import os
 from pathlib import Path
@@ -33,9 +24,21 @@ from minisweagent.run.extra.config import configure_if_first_time
 from minisweagent.run.utils.save import save_traj
 
 DEFAULT_CONFIG = Path(os.getenv("MSWEA_MINI_CONFIG_PATH", builtin_config_dir / "mini.yaml"))
+DEFAULT_OUTPUT = global_config_dir / "last_mini_run.traj.json"
 console = Console(highlight=False)
 app = typer.Typer(rich_markup_mode="rich")
 prompt_session = PromptSession(history=FileHistory(global_config_dir / "mini_task_history.txt"))
+_HELP_TEXT = """Run mini-SWE-agent in your local environment.
+
+[not dim]
+There are two different user interfaces:
+
+[bold green]mini[/bold green] Simple REPL-style interface
+[bold green]mini -v[/bold green] Pager-style interface (Textual)
+
+More information about the usage: [bold green]https://mini-swe-agent.com/latest/usage/mini/[/bold green]
+[/not dim]
+"""
 
 
 def run_interactive(model: Model, env: Environment, agent_config: dict, task: str, output: Path | None = None) -> Any:
@@ -68,7 +71,7 @@ def run_textual(model: Model, env: Environment, agent_config: dict, task: str, o
             save_traj(agent_app.agent, output, exit_status=agent_app.exit_status, result=agent_app.result)
 
 
-@app.command(help=__doc__)
+@app.command(help=_HELP_TEXT)
 def main(
     visual: bool = typer.Option(False, "-v", "--visual", help="Use visual (pager-style) UI (Textual)"),
     model_name: str | None = typer.Option(
@@ -81,7 +84,10 @@ def main(
     yolo: bool = typer.Option(False, "-y", "--yolo", help="Run without confirmation"),
     cost_limit: float | None = typer.Option(None, "-l", "--cost-limit", help="Cost limit. Set to 0 to disable."),
     config_spec: Path = typer.Option(DEFAULT_CONFIG, "-c", "--config", help="Path to config file"),
-    output: Path | None = typer.Option(None, "-o", "--output", help="Output file"),
+    output: Path | None = typer.Option(DEFAULT_OUTPUT, "-o", "--output", help="Output trajectory file"),
+    exit_immediately: bool = typer.Option(
+        False, "--exit-immediately", help="Exit immediately when the agent wants to finish instead of prompting."
+    ),
 ) -> Any:
     configure_if_first_time()
     config = yaml.safe_load(get_config_path(config_spec).read_text())
@@ -102,6 +108,8 @@ def main(
     config["agent"]["mode"] = "confirm" if not yolo else "yolo"
     if cost_limit:
         config["agent"]["cost_limit"] = cost_limit
+    if exit_immediately:
+        config["agent"]["confirm_exit"] = False
     model = get_model(model_name, config.get("model", {}))
     env = LocalEnvironment(**config.get("env", {}))
 

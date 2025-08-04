@@ -16,7 +16,7 @@
 </div>
 
 
-In 2024, [SWE-bench](https://swebench.com) & [SWE-agent](https://swe-agent.com) helped kickstart the agentic AI for software revolution.
+In 2024, [SWE-bench](https://swebench.com) & [SWE-agent](https://swe-agent.com) helped kickstart the coding agent revolution.
 
 We now ask: **What if the agent was 100x smaller, and still worked nearly as well?**
 
@@ -28,7 +28,7 @@ We now ask: **What if the agent was 100x smaller, and still worked nearly as wel
 
 Here's some details:
 
-- **Minimal**: Just [100 lines of python](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/agents/default.py) (+100 total for [env](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/environments/mini.py),
+- **Minimal**: Just [100 lines of python](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/agents/default.py) (+100 total for [env](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/environments/local.py),
 [model](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/models/litellm_model.py), [script](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/run/hello_world.py)) — no fancy dependencies!
 - **Powerful:** Resolves 65% of GitHub issues in the [SWE-bench verified benchmark](https://www.swebench.com/).
 - **Convenient:** Comes with UIs that turn this into your daily dev swiss army knife!
@@ -97,39 +97,55 @@ Here's some details:
 <table>
 <tr>
 <td width="50%">
-<a href="https://mini-swe-agent.com/usage/mini/"><strong>Simple UI</strong></a> (<code>mini</code>)
+<a href="usage/mini"><strong>Simple UI</strong></a> (<code>mini</code>)
 </td>
 <td>
-<a href="https://mini-swe-agent.com/usage/mini_v/"><strong>Visual UI</strong></a> (<code>mini -v</code>)
+<a href="usage/mini_v"><strong>Visual UI</strong></a> (<code>mini -v</code>)
 </td>
 </tr>
 <tr>
 <td width="50%">
-  <img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/mini.gif?raw=true" alt="mini" />
+  <div class="gif-container" data-glightbox-disabled>
+    <img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/png/mini.png?raw=true"
+         data-gif="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/mini.gif?raw=true"
+         alt="mini" data-glightbox="false" />
+  </div>
 </td>
 <td>
-  <img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/mini2.gif?raw=true" alt="miniv" />
-</td>
-</tr>
-<tr>
-<td>
-<a href="https://mini-swe-agent.com/usage/swebench/"><strong>Batch inference</strong></a>
-</td>
-<td>
-<a href="https://mini-swe-agent.com/usage/inspector/"><strong>Trajectory browser</strong></a>
-</td>
-</tr>
-<tr>
-<td>
-<img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/swebench.gif?raw=true" alt="swebench" />
-</td>
-<td>
-<img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/inspector.gif?raw=true" alt="inspector" />
+  <div class="gif-container" data-glightbox-disabled>
+    <img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/png/mini2.png?raw=true"
+         data-gif="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/mini2.gif?raw=true"
+         alt="miniv" data-glightbox="false" />
+  </div>
 </td>
 </tr>
 <tr>
 <td>
-<a href="https://mini-swe-agent.com/advanced/cookbook/"><strong>Python bindings</strong></a>
+<a href="usage/swebench/"><strong>Batch inference</strong></a>
+</td>
+<td>
+<a href="usage/inspector/"><strong>Trajectory browser</strong></a>
+</td>
+</tr>
+<tr>
+<td>
+<div class="gif-container" data-glightbox-disabled>
+  <img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/png/swebench.png?raw=true"
+       data-gif="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/swebench.gif?raw=true"
+       alt="swebench" data-glightbox="false" />
+</div>
+</td>
+<td>
+<div class="gif-container" data-glightbox-disabled>
+  <img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/png/inspector.png?raw=true"
+       data-gif="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/inspector.gif?raw=true"
+       alt="inspector" data-glightbox="false" />
+</div>
+</td>
+</tr>
+<tr>
+<td>
+<a href="advanced/cookbook/"><strong>Python bindings</strong></a>
 </td>
 <td>
 <a href="https://mini-swe-agent.com"><strong>More in the docs</strong></a>
@@ -145,16 +161,15 @@ agent.run("Write a sudoku game")</code></pre>
 </td>
 <td>
 <ul>
-<li><a href="https://mini-swe-agent.com/quickstart/">Quick start</a></li>
-<li><a href="https://mini-swe-agent.com/usage/mini/"><code>mini</code></a></li>
-<li><a href="https://mini-swe-agent.com/faq/">FAQ</a></li>
-<li><a href="https://mini-swe-agent.com/advanced/configuration/">Configuration</a></li>
-<li><a href="https://mini-swe-agent.com/advanced/cookbook/">Power up</a></li>
+<li><a href="quickstart">Quick start</a></li>
+<li><a href="usage/mini"><code>mini</code></a></li>
+<li><a href="faq">FAQ</a></li>
+<li><a href="advanced/configuration">Configuration</a></li>
+<li><a href="advanced/cookbook">Power up</a></li>
 </ul>
 </td>
 </tr>
 </table>
-
 
 
 ## Continue reading:
@@ -220,5 +235,13 @@ agent.run("Write a sudoku game")</code></pre>
     </div>
   </a>
 </div>
+
+## 📣 New features
+
+Please check the [github release notes](https://github.com/SWE-agent/mini-swe-agent/releases) for the latest updates.
+
+## 📣 Documentation updates
+
+* Jul 27: More notes on [local models](advanced/local_models.md)
 
 {% include-markdown "_footer.md" %}

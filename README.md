@@ -30,7 +30,7 @@ mini -m groq/moonshotai/kimi-k2-instruct
 [![Slack](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white)](https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s-o3_yXPZbaH2wVnxnss1EkQ)
 [![PyPI - Version](https://img.shields.io/pypi/v/mini-swe-agent?style=for-the-badge&logo=python&logoColor=white&labelColor=black&color=deeppink)](https://pypi.org/project/mini-swe-agent/)
 
-In 2024, [SWE-bench](https://github.com/swe-bench/SWE-bench) & [SWE-agent](https://github.com/swe-agent/swe-agent) helped kickstart the agentic AI for software revolution.
+In 2024, [SWE-bench](https://github.com/swe-bench/SWE-bench) & [SWE-agent](https://github.com/swe-agent/swe-agent) helped kickstart the coding agent revolution.
 
 We now ask: **What if SWE-agent was 100x smaller, and still worked nearly as well?**
 
@@ -196,7 +196,7 @@ agent.run("Write a sudoku game")
 
 ## Let's get started!
 
-Install + run in virtual environment
+Option 1: Install + run in virtual environment
 
 ```bash
 pip install uv && uvx mini-swe-agent [-v]
@@ -204,13 +204,13 @@ pip install uv && uvx mini-swe-agent [-v]
 pip install pipx && pipx ensurepath && pipx run mini-swe-agent [-v]
 ```
 
-Alternative: Install in current environment
+Option 2: Install in current environment
 
 ```bash
 pip install mini-swe-agent && mini [-v]
 ```
 
-Alternative: Install from source
+Option 3: Install from source
 
 ```bash
 git clone https://github.com/SWE-agent/mini-swe-agent.git
@@ -230,10 +230,7 @@ Read more in our [documentation](https://mini-swe-agent.com/latest/):
 
 ## Bottom line
 
-If you found this work helpful, please consider citing
-
-<details>
-<summary> SWE-agent citation</summary>
+If you found this work helpful, please consider citing the [SWE-agent paper](https://arxiv.org/abs/2405.15793) in your work:
 
 ```bibtex
 @inproceedings{yang2024sweagent,
@@ -244,7 +241,6 @@ If you found this work helpful, please consider citing
   url={https://arxiv.org/abs/2405.15793}
 }
 ```
-</details>
 
 More agentic AI:
 

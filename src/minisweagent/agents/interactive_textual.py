@@ -8,6 +8,7 @@ import os
 import re
 import threading
 import time
+import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -19,9 +20,9 @@ from textual.binding import Binding
 from textual.containers import Container, Vertical, VerticalScroll
 from textual.css.query import NoMatches
 from textual.events import Key
-from textual.widgets import Footer, Header, Static, TextArea
+from textual.widgets import Footer, Header, Input, Static, TextArea
 
-from minisweagent.agents.default import AgentConfig, DefaultAgent, NonTerminatingException
+from minisweagent.agents.default import AgentConfig, DefaultAgent, NonTerminatingException, Submitted
 
 
 @dataclass
@@ -30,6 +31,8 @@ class TextualAgentConfig(AgentConfig):
     """Mode for action execution: 'confirm' requires user confirmation, 'yolo' executes immediately."""
     whitelist_actions: list[str] = field(default_factory=list)
     """Never confirm actions that match these regular expressions."""
+    confirm_exit: bool = True
+    """If the agent wants to finish, do we ask for confirmation from user?"""
 
 
 class TextualAgent(DefaultAgent):
@@ -37,17 +40,29 @@ class TextualAgent(DefaultAgent):
         """Connects the DefaultAgent to the TextualApp."""
         self.app = app
         super().__init__(*args, config_class=TextualAgentConfig, **kwargs)
+        self._current_action_from_human = False
 
     def add_message(self, role: str, content: str):
         super().add_message(role, content)
         if self.app.agent_state != "UNINITIALIZED":
             self.app.call_from_thread(self.app.on_message_added)
 
+    def query(self) -> dict:
+        if self.config.mode == "human":
+            human_input = self.app.input_container.request_input("Enter your command:")
+            self._current_action_from_human = True
+            msg = {"content": f"\n```bash\n{human_input}\n```"}
+            self.add_message("assistant", msg["content"])
+            return msg
+        self._current_action_from_human = False
+        return super().query()
+
     def run(self, task: str) -> tuple[str, str]:
         try:
             exit_status, result = super().run(task)
         except Exception as e:
             result = str(e)
+            print(traceback.format_exc())
             self.app.call_from_thread(self.app.on_agent_finished, "ERROR", result)
             return "ERROR", result
         else:
@@ -55,12 +70,29 @@ class TextualAgent(DefaultAgent):
         return exit_status, result
 
     def execute_action(self, action: dict) -> dict:
-        if self.config.mode == "confirm" and not any(
-            re.match(r, action["action"]) for r in self.config.whitelist_actions
+        if self.config.mode == "human" and not self._current_action_from_human:  # threading, grrrrr
+            raise NonTerminatingException("Command not executed because user switched to manual mode.")
+        if (
+            self.config.mode == "confirm"
+            and action["action"].strip()
+            and not any(re.match(r, action["action"]) for r in self.config.whitelist_actions)
         ):
-            if result := self.app.confirmation_container.request_confirmation(action["action"]):
+            result = self.app.input_container.request_input("Press ENTER to confirm or provide rejection reason")
+            if result:  # Non-empty string means rejection
                 raise NonTerminatingException(f"Command not executed: {result}")
         return super().execute_action(action)
+
+    def has_finished(self, output: dict[str, str]):
+        try:
+            return super().has_finished(output)
+        except Submitted as e:
+            if self.config.confirm_exit:
+                if new_task := self.app.input_container.request_input(
+                    "[bold green]Agent wants to finish.[/bold green] "
+                    "[green]Type a comment to give it a new task or press enter to quit.\n"
+                ).strip():
+                    raise NonTerminatingException(f"The user added a new task: {new_task}")
+            raise e
 
 
 class AddLogEmitCallback(logging.Handler):
@@ -87,77 +119,123 @@ def _messages_to_steps(messages: list[dict]) -> list[list[dict]]:
     return steps
 
 
-class ConfirmationPromptContainer(Container):
+class SmartInputContainer(Container):
     def __init__(self, app: "AgentApp"):
-        """This class is responsible for handling the action execution confirmation."""
-        super().__init__(id="confirmation-container")
+        """Smart input container supporting single-line and multi-line input modes."""
+        super().__init__(classes="smart-input-container")
         self._app = app
-        self.rejecting = False
+        self._multiline_mode = False
         self.can_focus = True
         self.display = False
 
-        self._pending_action: str | None = None
-        self._confirmation_event = threading.Event()
-        self._confirmation_result: str | None = None
+        self.pending_prompt: str | None = None
+        self._input_event = threading.Event()
+        self._input_result: str | None = None
+
+        self._header_display = Static(
+            "USER INPUT REQUESTED", id="input-header-display", classes="message-header input-request-header"
+        )
+        self._hint_text = Static(
+            "[bold]Enter[/bold] to submit, [bold]Ctrl+T[/bold] to switch to multi-line input, [bold]Tab[/bold] to switch focus with other controls",
+            classes="hint-text",
+        )
+        self._single_input = Input(placeholder="Type your input...")
+        self._multi_input = TextArea("", show_line_numbers=False, classes="multi-input")
+
+        self._input_elements_container = Vertical(
+            self._header_display,
+            self._hint_text,
+            self._single_input,
+            self._multi_input,
+            classes="message-container",
+        )
 
     def compose(self) -> ComposeResult:
-        yield Static(
-            "Press [bold]ENTER[/bold] to confirm action or [bold]BACKSPACE[/bold] to reject (or [bold]y[/bold] to toggle YOLO mode)",
-            classes="confirmation-prompt",
-        )
-        yield TextArea(id="rejection-input")
-        rejection_help = Static(
-            "Press [bold]Ctrl+D[/bold] to submit rejection message",
-            id="rejection-help",
-            classes="rejection-help",
-        )
-        rejection_help.display = False
-        yield rejection_help
+        yield self._input_elements_container
 
-    def request_confirmation(self, action: str) -> str | None:
-        """Request confirmation for an action. Returns rejection message or None."""
-        self._confirmation_event.clear()
-        self._confirmation_result = None
-        self._pending_action = action
+    def on_mount(self) -> None:
+        """Initialize the widget state."""
+        self._multi_input.display = False
+        self._update_mode_display()
+
+    def on_focus(self) -> None:
+        """Called when the container gains focus."""
+        if self._multiline_mode:
+            self._multi_input.focus()
+        else:
+            self._single_input.focus()
+
+    def request_input(self, prompt: str) -> str:
+        """Request input from user. Returns input text (empty string if confirmed without reason)."""
+        self._input_event.clear()
+        self._input_result = None
+        self.pending_prompt = prompt
+        self._header_display.update(prompt)
+        self._update_mode_display()
         self._app.call_from_thread(self._app.update_content)
-        self._confirmation_event.wait()
-        return self._confirmation_result
+        self._input_event.wait()
+        return self._input_result or ""
 
-    def _complete_confirmation(self, rejection_message: str | None):
-        """Internal method to complete the confirmation process."""
-        self._confirmation_result = rejection_message
-        self._pending_action = None
+    def _complete_input(self, input_text: str):
+        """Internal method to complete the input process."""
+        self._input_result = input_text
+        self.pending_prompt = None
+        self._header_display.update("USER INPUT REQUESTED")
         self.display = False
-        self.rejecting = False
-        rejection_input = self.query_one("#rejection-input", TextArea)
-        rejection_input.display = False
-        rejection_input.text = ""
-        rejection_help = self.query_one("#rejection-help", Static)
-        rejection_help.display = False
-        # Reset agent state to RUNNING after confirmation is completed
-        if rejection_message is None:
-            self._app.agent_state = "RUNNING"
-        self._confirmation_event.set()
+        self._single_input.value = ""
+        self._multi_input.text = ""
+        self._multiline_mode = False
+        self._update_mode_display()
+        self._app.agent_state = "RUNNING"
         self._app.update_content()
+        # Reset scroll position to bottom since input container disappearing changes layout
+        # somehow scroll_to doesn't work.
+        self._app._vscroll.scroll_y = 0
+        self._input_event.set()
+
+    def action_toggle_mode(self) -> None:
+        """Switch from single-line to multi-line mode (one-way only)."""
+        if self.pending_prompt is None or self._multiline_mode:
+            return
+
+        self._multiline_mode = True
+        self._update_mode_display()
+        self.on_focus()
+
+    def _update_mode_display(self) -> None:
+        """Update the display based on current mode."""
+        if self._multiline_mode:
+            self._multi_input.text = self._single_input.value
+            self._single_input.display = False
+            self._multi_input.display = True
+
+        else:
+            self._multi_input.display = False
+            self._single_input.display = True
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle single-line input submission."""
+        if not self._multiline_mode:
+            text = event.input.value.strip()
+            self._complete_input(text)
 
     def on_key(self, event: Key) -> None:
-        if self.rejecting and event.key == "ctrl+d":
+        """Handle key events."""
+        if event.key == "ctrl+t" and not self._multiline_mode:
             event.prevent_default()
-            rejection_input = self.query_one("#rejection-input", TextArea)
-            self._complete_confirmation(rejection_input.text)
+            self.action_toggle_mode()
             return
-        if not self.rejecting:
-            if event.key == "enter":
-                event.prevent_default()
-                self._complete_confirmation(None)
-            elif event.key == "backspace":
-                event.prevent_default()
-                self.rejecting = True
-                rejection_input = self.query_one("#rejection-input", TextArea)
-                rejection_input.display = True
-                rejection_input.focus()
-                rejection_help = self.query_one("#rejection-help", Static)
-                rejection_help.display = True
+
+        if self._multiline_mode and event.key == "ctrl+d":
+            event.prevent_default()
+            self._complete_input(self._multi_input.text.strip())
+            return
+
+        if event.key == "escape":
+            event.prevent_default()
+            self.can_focus = False
+            self._app.set_focus(None)
+            return
 
 
 class AgentApp(App):
@@ -171,6 +249,7 @@ class AgentApp(App):
         Binding("q", "quit", "Quit"),
         Binding("y", "yolo", "Switch to YOLO Mode"),
         Binding("c", "confirm", "Switch to Confirm Mode"),
+        Binding("u", "human", "Switch to Human Mode"),
     ]
 
     def __init__(self, model, env, task: str, **kwargs):
@@ -182,12 +261,14 @@ class AgentApp(App):
         self.agent = TextualAgent(self, model=model, env=env, **kwargs)
         self._i_step = 0
         self.n_steps = 1
-        self.confirmation_container = ConfirmationPromptContainer(self)
+        self.input_container = SmartInputContainer(self)
         self.log_handler = AddLogEmitCallback(lambda record: self.call_from_thread(self.on_log_message_emitted, record))
         logging.getLogger().addHandler(self.log_handler)
         self._spinner = Spinner("dots")
         self.exit_status: str | None = None
         self.result: str | None = None
+
+        self._vscroll = VerticalScroll()
 
     # --- Basics ---
 
@@ -201,15 +282,16 @@ class AgentApp(App):
         """Set current step index, automatically clamping to valid bounds."""
         if value != self._i_step:
             self._i_step = max(0, min(value, self.n_steps - 1))
-            self.query_one(VerticalScroll).scroll_to(y=0, animate=False)
+            self._vscroll.scroll_to(y=0, animate=False)
             self.update_content()
 
     def compose(self) -> ComposeResult:
         yield Header()
         with Container(id="main"):
-            with VerticalScroll():
-                yield Vertical(id="content")
-            yield self.confirmation_container
+            with self._vscroll:
+                with Vertical(id="content"):
+                    pass
+                yield self.input_container
         yield Footer()
 
     def on_mount(self) -> None:
@@ -221,8 +303,7 @@ class AgentApp(App):
     # --- Reacting to events ---
 
     def on_message_added(self) -> None:
-        vs = self.query_one(VerticalScroll)
-        auto_follow = self.i_step == self.n_steps - 1 and vs.scroll_target_y <= 1
+        auto_follow = self.i_step == self.n_steps - 1 and self._vscroll.scroll_y <= 1
         self.n_steps = len(_messages_to_steps(self.agent.messages))
         self.update_content()
         if auto_follow:
@@ -267,13 +348,11 @@ class AgentApp(App):
             message_container.mount(Static(role.upper(), classes="message-header"))
             message_container.mount(Static(Text(content_str, no_wrap=False), classes="message-content"))
 
-        if self.confirmation_container._pending_action is not None:
-            self.agent_state = "AWAITING_CONFIRMATION"
-        self.confirmation_container.display = (
-            self.confirmation_container._pending_action is not None and self.i_step == len(items) - 1
-        )
-        if self.confirmation_container.display:
-            self.confirmation_container.focus()
+        if self.input_container.pending_prompt is not None:
+            self.agent_state = "AWAITING_INPUT"
+        self.input_container.display = self.input_container.pending_prompt is not None and self.i_step == len(items) - 1
+        if self.input_container.display:
+            self.input_container.on_focus()
 
         self._update_headers()
         self.refresh()
@@ -294,12 +373,21 @@ class AgentApp(App):
 
     def action_yolo(self):
         self.agent.config.mode = "yolo"
-        self.confirmation_container._complete_confirmation(None)
-        self.notify("YOLO mode enabled - actions will execute immediately")
+        if self.input_container.pending_prompt is not None:
+            self.input_container._complete_input("")  # accept
+        self.notify("YOLO mode enabled - LM actions will execute immediately")
+
+    def action_human(self):
+        if self.agent.config.mode == "confirm" and self.input_container.pending_prompt is not None:
+            self.input_container._complete_input("User switched to manual mode, this command will be ignored")
+        self.agent.config.mode = "human"
+        self.notify("Human mode enabled - you can now type commands directly")
 
     def action_confirm(self):
+        if self.agent.config.mode == "human" and self.input_container.pending_prompt is not None:
+            self.input_container._complete_input("")  # just submit blank action
         self.agent.config.mode = "confirm"
-        self.notify("Confirm mode enabled - actions will require confirmation")
+        self.notify("Confirm mode enabled - LM proposes commands and you confirm/reject them")
 
     def action_next_step(self) -> None:
         self.i_step += 1
@@ -314,9 +402,7 @@ class AgentApp(App):
         self.i_step = self.n_steps - 1
 
     def action_scroll_down(self) -> None:
-        vs = self.query_one(VerticalScroll)
-        vs.scroll_to(y=vs.scroll_target_y + 15)
+        self._vscroll.scroll_to(y=self._vscroll.scroll_target_y + 15)
 
     def action_scroll_up(self) -> None:
-        vs = self.query_one(VerticalScroll)
-        vs.scroll_to(y=vs.scroll_target_y - 15)
+        self._vscroll.scroll_to(y=self._vscroll.scroll_target_y - 15)

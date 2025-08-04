@@ -10,7 +10,7 @@
       "pattern": ".*localhost.*"
     },
     {
-      "pattern": ".*#swerex.*"
+      "pattern": "^(?!https).*(?<!\\.md)$"
     }
   ]
 }

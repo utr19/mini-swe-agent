@@ -5,11 +5,18 @@
     * `mini -v` is a pager-style interactive command line interface for using mini-SWE-agent in the local requirement (as opposed for workflows that require sandboxing or large scale batch processing).
     * Compared to [`mini`](mini.md), `mini -v` offers a more advanced UI based on [Textual](https://textual.textualize.io/).
 
-VIDEO HERE TODO
-
 !!! tip "Feedback wanted!"
     Give feedback on the `mini` and `mini -v` interfaces at [this github issue](https://github.com/swe-agent/mini-swe-agent/issues/161)
     or in our [Slack channel](https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s-o3_yXPZbaH2wVnxnss1EkQ).
+
+
+<figure markdown="span">
+  <div class="gif-container gif-container-styled" data-glightbox-disabled>
+    <img src="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/png/mini2.png?raw=true"
+         data-gif="https://github.com/SWE-agent/swe-agent-media/blob/main/media/mini/gif/mini2.gif?raw=true"
+         alt="miniv" data-glightbox="false" width="600" />
+  </div>
+</figure>
 
 ## Command line options
 
@@ -38,14 +45,22 @@ Useful switches:
 
 - `confirm` (`c`): The LM proposes an action and the user is prompted to confirm (press Enter)) or reject (enter a rejection message))
 - `yolo` (`y`): The action from the LM is executed immediately without confirmation
+- `human` (`u`): The user is prompted to enter a command directly
 
-You can switch between the modes at any time by pressing the `c` or `y` keys.
+You can switch between the modes at any time by pressing the `c`, `y`, or `u` keys.
 
 `mini -v` starts in `confirm` mode by default. To start in `yolo` mode, you can add `-y`/`--yolo` to the command line.
 
-## FAQ
+### FAQ
 
-> How can I copy output from the
+> How can I select/copy text on the screen?
+
+Hold down the `Alt`/`Option` key and use the mouse to select the text.
+
+## Miscellaneous tips
+
+- `mini` saves the full history of your last run to your global config directory.
+  The path to the directory is printed when you start `mini`.
 
 ## Implementation
 

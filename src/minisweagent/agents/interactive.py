@@ -28,13 +28,15 @@ class InteractiveAgentConfig(AgentConfig):
     """Whether to confirm actions."""
     whitelist_actions: list[str] = field(default_factory=list)
     """Never confirm actions that match these regular expressions."""
+    confirm_exit: bool = True
+    """If the agent wants to finish, do we ask for confirmation from user?"""
 
 
 class InteractiveAgent(DefaultAgent):
     _MODE_COMMANDS_MAPPING = {"/u": "human", "/c": "confirm", "/y": "yolo"}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, config_class=InteractiveAgentConfig, **kwargs)
+    def __init__(self, *args, config_class=InteractiveAgentConfig, **kwargs):
+        super().__init__(*args, config_class=config_class, **kwargs)
         self.cost_last_confirmed = 0.0
 
     def add_message(self, role: str, content: str):
@@ -57,7 +59,9 @@ class InteractiveAgent(DefaultAgent):
                 case "/y" | "/c":  # Just go to the super query, which queries the LM for the next action
                     pass
                 case _:
-                    return {"content": f"\n```bash\n{command}\n```"}
+                    msg = {"content": f"\n```bash\n{command}\n```"}
+                    self.add_message("assistant", msg["content"])
+                    return msg
         try:
             with console.status("Waiting for the LM to respond..."):
                 return super().query()
@@ -137,12 +141,13 @@ class InteractiveAgent(DefaultAgent):
         try:
             return super().has_finished(output)
         except Submitted as e:
-            console.print(
-                "[bold green]Agent wants to finish.[/bold green] "
-                "[green]Type a comment to give it a new task or press enter to quit.\n"
-                "[bold yellow]>[/bold yellow] ",
-                end="",
-            )
-            if new_task := self._prompt_and_handle_special("").strip():
-                raise NonTerminatingException(f"The user added a new task: {new_task}")
+            if self.config.confirm_exit:
+                console.print(
+                    "[bold green]Agent wants to finish.[/bold green] "
+                    "[green]Type a comment to give it a new task or press enter to quit.\n"
+                    "[bold yellow]>[/bold yellow] ",
+                    end="",
+                )
+                if new_task := self._prompt_and_handle_special("").strip():
+                    raise NonTerminatingException(f"The user added a new task: {new_task}")
             raise e
