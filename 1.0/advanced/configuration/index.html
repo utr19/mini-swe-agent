@@ -1707,6 +1707,9 @@ setx<span class="w"> </span>KEY<span class="w"> </span><span class="s2">&quot;va
 <span class="c1"># (default: not set)</span>
 <span class="nv">MSWEA_MODEL_API_KEY</span><span class="o">=</span><span class="s2">&quot;sk-...&quot;</span>
 </code></pre></div>
+<p>To register extra models to litellm (see <a href="../local_models/">local models</a> for more details), you can either specify the path in the agent file, or set</p>
+<div class="highlight"><pre><span></span><code><span class="nv">LITELLM_MODEL_REGISTRY_PATH</span><span class="o">=</span><span class="s2">&quot;/path/to/your/model/registry.json&quot;</span>
+</code></pre></div>
 <p>For Anthropic models, you can also use <code>ANTHROPIC_API_KEYS</code> for advanced parallel execution:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Multiple Anthropic keys for parallel execution (separated by &quot;::&quot;)</span>
 <span class="nv">ANTHROPIC_API_KEYS</span><span class="o">=</span><span class="s2">&quot;key1::key2::key3&quot;</span>
@@ -1746,6 +1749,10 @@ setx<span class="w"> </span>KEY<span class="w"> </span><span class="s2">&quot;va
 <div class="highlight"><pre><span></span><code><span class="c1"># Default run script entry point for the main CLI</span>
 <span class="c1"># (default: &quot;minisweagent.run.mini&quot;)</span>
 <span class="nv">MSWEA_DEFAULT_RUN</span><span class="o">=</span><span class="s2">&quot;minisweagent.run.mini&quot;</span>
+
+<span class="c1"># Set to true to use visual mode by default for the main CLI</span>
+<span class="c1"># (default: false)</span>
+<span class="nv">MSWEA_VISUAL_MODE_DEFAULT</span><span class="o">=</span><span class="s2">&quot;false&quot;</span>
 </code></pre></div>
 <h2 id="agent-configuration-files">Agent configuration files</h2>
 <p>Configuration files look like this:</p>
@@ -1768,8 +1775,6 @@ setx<span class="w"> </span>KEY<span class="w"> </span><span class="s2">&quot;va
 <span class="w">    </span><span class="no">&lt;/format_example&gt;</span>
 
 <span class="w">    </span><span class="no">Failure to follow these rules will cause your response to be rejected.</span>
-<span class="w">    </span><span class="no">To finish, issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`</span>
-<span class="w">    </span><span class="no">without any other command.</span>
 <span class="w">  </span><span class="nt">instance_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 <span class="w">    </span><span class="no">Please solve this issue: {{task}}</span>
 
@@ -1777,14 +1782,15 @@ setx<span class="w"> </span>KEY<span class="w"> </span><span class="s2">&quot;va
 
 <span class="w">    </span><span class="no">## Recommended Workflow</span>
 
-<span class="w">    </span><span class="no">1. If present, you might want to take a look at the following files that set additional guidelines</span>
-<span class="w">       </span><span class="no">for your work: CLAUDE.md, .github/copilot-instructions.md. Use a find command to locate all of them at once.</span>
-<span class="w">       </span><span class="no">If files corresponding to multiple AI systems are present, it&#39;s enough to read the ones for one of them.</span>
-<span class="w">    </span><span class="no">2. Analyze the codebase by finding and reading relevant files.</span>
-<span class="w">    </span><span class="no">3. Create a script to reproduce the issue</span>
-<span class="w">    </span><span class="no">4. Edit the source code to resolve the issue</span>
-<span class="w">    </span><span class="no">5. Verify your fix works by running your script again</span>
-<span class="w">    </span><span class="no">6. Test edge cases to ensure your fix is robust</span>
+<span class="w">    </span><span class="no">This workflows should be done step-by-step so that you can iterate on your changes and any possible problems.</span>
+
+<span class="w">    </span><span class="no">1. Analyze the codebase by finding and reading relevant files</span>
+<span class="w">    </span><span class="no">2. Create a script to reproduce the issue</span>
+<span class="w">    </span><span class="no">3. Edit the source code to resolve the issue</span>
+<span class="w">    </span><span class="no">4. Verify your fix works by running your script again</span>
+<span class="w">    </span><span class="no">5. Test edge cases to ensure your fix is robust</span>
+<span class="w">    </span><span class="no">6. Submit your changes and finish your work by issuing the following command: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.</span>
+<span class="w">       </span><span class="no">Do not combine it with any other command. &lt;important&gt;After this command, you cannot continue working on this task.&lt;/important&gt;</span>
 
 <span class="w">    </span><span class="no">## Important Rules</span>
 
@@ -1792,8 +1798,6 @@ setx<span class="w"> </span>KEY<span class="w"> </span><span class="s2">&quot;va
 <span class="w">    </span><span class="no">2. The action must be enclosed in triple backticks</span>
 <span class="w">    </span><span class="no">3. Directory or environment variable changes are not persistent. Every action is executed in a new subshell.</span>
 <span class="w">       </span><span class="no">However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd /path/to/working/dir &amp;&amp; ...` or write/load environment variables from files</span>
-<span class="w">    </span><span class="no">4. To finish, issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`.</span>
-<span class="w">       </span><span class="no">Do not combine it with any other command.</span>
 
 <span class="w">    </span><span class="no">&lt;system_information&gt;</span>
 <span class="w">    </span><span class="no">{{system}} {{release}} {{version}} {{machine}} {{processor}}</span>
@@ -1884,7 +1888,7 @@ setx<span class="w"> </span>KEY<span class="w"> </span><span class="s2">&quot;va
 <span class="w">    </span><span class="no">{%- endif -%}</span>
 <span class="w">  </span><span class="nt">format_error_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 <span class="w">    </span><span class="no">Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions.</span>
-<span class="w">    </span><span class="no">If you want to end the task, please issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`</span>
+<span class="w">    </span><span class="no">If you want to end the task, please issue the following command: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`</span>
 <span class="w">    </span><span class="no">without any other command.</span>
 <span class="w">    </span><span class="no">Else, please format your response exactly as follows:</span>
 

@@ -1695,6 +1695,14 @@ or in our <a href="https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s
   </div>
 </figure>
 <h2 id="command-line-options">Command line options</h2>
+<p>Invocation</p>
+<div class="highlight"><pre><span></span><code>mini<span class="w"> </span>-v<span class="w"> </span><span class="o">[</span>other<span class="w"> </span>options<span class="o">]</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Default visual mode</p>
+<p>If you want to use the visual mode by default, you can set the <code>MSWEA_VISUAL_MODE_DEFAULT</code> environment variable to <code>true</code>
+(<code>mini-extra config set MSWEA_VISUAL_MODE_DEFAULT true</code>).</p>
+</div>
 <p>Useful switches:</p>
 <ul>
 <li><code>-h</code>/<code>--help</code>: Show help</li>
@@ -1705,12 +1713,20 @@ or in our <a href="https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s
 <li><code>-y</code>/<code>--yolo</code>: Start in <code>yolo</code> mode (see below)</li>
 </ul>
 <h2 id="key-bindings">Key bindings</h2>
+<div class="admonition tip">
+<p class="admonition-title">Focused input fields</p>
+<p>Whenever you are prompted to enter text, the input field will be focused.
+You can use <code>Tab</code> or <code>Esc</code> to switch between the input field controls and the general controls below.</p>
+</div>
 <ul>
-<li><code>q</code>: Quit the agent</li>
+<li><code>f1</code> or <code>?</code>: Show keybinding help</li>
+<li><code>q</code> (or <code>ctrl+q</code>): Quit the agent</li>
 <li><code>c</code>: Switch to <code>confirm</code> mode</li>
-<li><code>y</code>: Switch to <code>yolo</code> mode</li>
-<li><code>h</code> or <code>LEFT</code>: Go back in history</li>
-<li><code>l</code> or <code>RIGHT</code>: Go forward in history</li>
+<li><code>y</code> (or <code>ctrl+y</code>): Switch to <code>yolo</code> mode</li>
+<li><code>h</code> or <code>LEFT</code>: Go to previous step of the agent</li>
+<li><code>l</code> or <code>RIGHT</code>: Go to next step of the agent</li>
+<li><code>0</code>: Go to first step of the agent</li>
+<li><code>$</code>: Go to last step of the agent</li>
 <li><code>j</code> or <code>DOWN</code>: Scroll down</li>
 <li><code>k</code> or <code>UP</code>: Scroll up</li>
 </ul>
@@ -1756,8 +1772,6 @@ or in our <a href="https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s
 <span class="w">    </span><span class="no">&lt;/format_example&gt;</span>
 
 <span class="w">    </span><span class="no">Failure to follow these rules will cause your response to be rejected.</span>
-<span class="w">    </span><span class="no">To finish, issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`</span>
-<span class="w">    </span><span class="no">without any other command.</span>
 <span class="w">  </span><span class="nt">instance_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 <span class="w">    </span><span class="no">Please solve this issue: {{task}}</span>
 
@@ -1765,14 +1779,15 @@ or in our <a href="https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s
 
 <span class="w">    </span><span class="no">## Recommended Workflow</span>
 
-<span class="w">    </span><span class="no">1. If present, you might want to take a look at the following files that set additional guidelines</span>
-<span class="w">       </span><span class="no">for your work: CLAUDE.md, .github/copilot-instructions.md. Use a find command to locate all of them at once.</span>
-<span class="w">       </span><span class="no">If files corresponding to multiple AI systems are present, it&#39;s enough to read the ones for one of them.</span>
-<span class="w">    </span><span class="no">2. Analyze the codebase by finding and reading relevant files.</span>
-<span class="w">    </span><span class="no">3. Create a script to reproduce the issue</span>
-<span class="w">    </span><span class="no">4. Edit the source code to resolve the issue</span>
-<span class="w">    </span><span class="no">5. Verify your fix works by running your script again</span>
-<span class="w">    </span><span class="no">6. Test edge cases to ensure your fix is robust</span>
+<span class="w">    </span><span class="no">This workflows should be done step-by-step so that you can iterate on your changes and any possible problems.</span>
+
+<span class="w">    </span><span class="no">1. Analyze the codebase by finding and reading relevant files</span>
+<span class="w">    </span><span class="no">2. Create a script to reproduce the issue</span>
+<span class="w">    </span><span class="no">3. Edit the source code to resolve the issue</span>
+<span class="w">    </span><span class="no">4. Verify your fix works by running your script again</span>
+<span class="w">    </span><span class="no">5. Test edge cases to ensure your fix is robust</span>
+<span class="w">    </span><span class="no">6. Submit your changes and finish your work by issuing the following command: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.</span>
+<span class="w">       </span><span class="no">Do not combine it with any other command. &lt;important&gt;After this command, you cannot continue working on this task.&lt;/important&gt;</span>
 
 <span class="w">    </span><span class="no">## Important Rules</span>
 
@@ -1780,8 +1795,6 @@ or in our <a href="https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s
 <span class="w">    </span><span class="no">2. The action must be enclosed in triple backticks</span>
 <span class="w">    </span><span class="no">3. Directory or environment variable changes are not persistent. Every action is executed in a new subshell.</span>
 <span class="w">       </span><span class="no">However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd /path/to/working/dir &amp;&amp; ...` or write/load environment variables from files</span>
-<span class="w">    </span><span class="no">4. To finish, issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`.</span>
-<span class="w">       </span><span class="no">Do not combine it with any other command.</span>
 
 <span class="w">    </span><span class="no">&lt;system_information&gt;</span>
 <span class="w">    </span><span class="no">{{system}} {{release}} {{version}} {{machine}} {{processor}}</span>
@@ -1872,7 +1885,7 @@ or in our <a href="https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s
 <span class="w">    </span><span class="no">{%- endif -%}</span>
 <span class="w">  </span><span class="nt">format_error_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 <span class="w">    </span><span class="no">Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions.</span>
-<span class="w">    </span><span class="no">If you want to end the task, please issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`</span>
+<span class="w">    </span><span class="no">If you want to end the task, please issue the following command: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`</span>
 <span class="w">    </span><span class="no">without any other command.</span>
 <span class="w">    </span><span class="no">Else, please format your response exactly as follows:</span>
 
@@ -1983,7 +1996,12 @@ or in our <a href="https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="n">_HELP_TEXT</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span>
-    <span class="n">visual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="s2">&quot;--visual&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use visual (pager-style) UI (Textual)&quot;</span><span class="p">),</span>
+    <span class="n">visual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
+        <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--visual&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Toggle (pager-style) UI (Textual) depending on the MSWEA_VISUAL_MODE_DEFAULT environment setting&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
         <span class="kc">None</span><span class="p">,</span>
         <span class="s2">&quot;-m&quot;</span><span class="p">,</span>
@@ -2023,7 +2041,8 @@ or in our <a href="https://join.slack.com/t/swe-bench/shared_invite/zt-36pj9bu5s
     <span class="n">model</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="p">{}))</span>
     <span class="n">env</span> <span class="o">=</span> <span class="n">LocalEnvironment</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;env&quot;</span><span class="p">,</span> <span class="p">{}))</span>
 
-    <span class="k">if</span> <span class="n">visual</span><span class="p">:</span>
+    <span class="c1"># Both visual flag and the MSWEA_VISUAL_MODE_DEFAULT flip the mode, so it&#39;s essentially a XOR</span>
+    <span class="k">if</span> <span class="n">visual</span> <span class="o">==</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;MSWEA_VISUAL_MODE_DEFAULT&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;false&quot;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">run_textual</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;agent&quot;</span><span class="p">],</span> <span class="n">task</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">run_interactive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;agent&quot;</span><span class="p">],</span> <span class="n">task</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>

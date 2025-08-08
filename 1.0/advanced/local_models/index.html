@@ -1651,6 +1651,7 @@ This is done with the <code>model_kwargs</code> dictionary which is directly pas
 </ul>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
@@ -1673,7 +1674,7 @@ This is done with the <code>model_kwargs</code> dictionary which is directly pas
 <span class="k">class</span><span class="w"> </span><span class="nc">LitellmModelConfig</span><span class="p">:</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-    <span class="n">litellm_model_registry</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">litellm_model_registry</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;LITELLM_MODEL_REGISTRY_PATH&quot;</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">LitellmModel</span><span class="p">:</span>
@@ -1681,7 +1682,7 @@ This is done with the <code>model_kwargs</code> dictionary which is directly pas
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">LitellmModelConfig</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_calls</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">litellm_model_registry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">litellm_model_registry</span> <span class="ow">and</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">litellm_model_registry</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
             <span class="n">litellm</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">register_model</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">litellm_model_registry</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()))</span>
 
     <span class="nd">@retry</span><span class="p">(</span>
@@ -1741,8 +1742,6 @@ This is done with the <code>model_kwargs</code> dictionary which is directly pas
 <span class="w">    </span><span class="no">&lt;/format_example&gt;</span>
 
 <span class="w">    </span><span class="no">Failure to follow these rules will cause your response to be rejected.</span>
-<span class="w">    </span><span class="no">To finish, issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`</span>
-<span class="w">    </span><span class="no">without any other command.</span>
 <span class="w">  </span><span class="nt">instance_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 <span class="w">    </span><span class="no">Please solve this issue: {{task}}</span>
 
@@ -1750,14 +1749,15 @@ This is done with the <code>model_kwargs</code> dictionary which is directly pas
 
 <span class="w">    </span><span class="no">## Recommended Workflow</span>
 
-<span class="w">    </span><span class="no">1. If present, you might want to take a look at the following files that set additional guidelines</span>
-<span class="w">       </span><span class="no">for your work: CLAUDE.md, .github/copilot-instructions.md. Use a find command to locate all of them at once.</span>
-<span class="w">       </span><span class="no">If files corresponding to multiple AI systems are present, it&#39;s enough to read the ones for one of them.</span>
-<span class="w">    </span><span class="no">2. Analyze the codebase by finding and reading relevant files.</span>
-<span class="w">    </span><span class="no">3. Create a script to reproduce the issue</span>
-<span class="w">    </span><span class="no">4. Edit the source code to resolve the issue</span>
-<span class="w">    </span><span class="no">5. Verify your fix works by running your script again</span>
-<span class="w">    </span><span class="no">6. Test edge cases to ensure your fix is robust</span>
+<span class="w">    </span><span class="no">This workflows should be done step-by-step so that you can iterate on your changes and any possible problems.</span>
+
+<span class="w">    </span><span class="no">1. Analyze the codebase by finding and reading relevant files</span>
+<span class="w">    </span><span class="no">2. Create a script to reproduce the issue</span>
+<span class="w">    </span><span class="no">3. Edit the source code to resolve the issue</span>
+<span class="w">    </span><span class="no">4. Verify your fix works by running your script again</span>
+<span class="w">    </span><span class="no">5. Test edge cases to ensure your fix is robust</span>
+<span class="w">    </span><span class="no">6. Submit your changes and finish your work by issuing the following command: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.</span>
+<span class="w">       </span><span class="no">Do not combine it with any other command. &lt;important&gt;After this command, you cannot continue working on this task.&lt;/important&gt;</span>
 
 <span class="w">    </span><span class="no">## Important Rules</span>
 
@@ -1765,8 +1765,6 @@ This is done with the <code>model_kwargs</code> dictionary which is directly pas
 <span class="w">    </span><span class="no">2. The action must be enclosed in triple backticks</span>
 <span class="w">    </span><span class="no">3. Directory or environment variable changes are not persistent. Every action is executed in a new subshell.</span>
 <span class="w">       </span><span class="no">However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd /path/to/working/dir &amp;&amp; ...` or write/load environment variables from files</span>
-<span class="w">    </span><span class="no">4. To finish, issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`.</span>
-<span class="w">       </span><span class="no">Do not combine it with any other command.</span>
 
 <span class="w">    </span><span class="no">&lt;system_information&gt;</span>
 <span class="w">    </span><span class="no">{{system}} {{release}} {{version}} {{machine}} {{processor}}</span>
@@ -1857,7 +1855,7 @@ This is done with the <code>model_kwargs</code> dictionary which is directly pas
 <span class="w">    </span><span class="no">{%- endif -%}</span>
 <span class="w">  </span><span class="nt">format_error_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 <span class="w">    </span><span class="no">Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions.</span>
-<span class="w">    </span><span class="no">If you want to end the task, please issue the following command: `echo MINI_SWE_AGENT_FINAL_OUTPUT`</span>
+<span class="w">    </span><span class="no">If you want to end the task, please issue the following command: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`</span>
 <span class="w">    </span><span class="no">without any other command.</span>
 <span class="w">    </span><span class="no">Else, please format your response exactly as follows:</span>
 
@@ -1908,12 +1906,7 @@ There are two ways to do this with <code>litellm</code>:</p>
 <li>You update the model registry (next section)</li>
 </ol>
 <h3 id="updating-the-model-registry">Updating the model registry</h3>
-<p>LiteLLM get its cost and model metadata from <a href="https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json">this file</a>. You can override or add data from this file if it's outdated or missing your desired model by including a custom registry file in the model config:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">model</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">litellm_model_registry</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;path/to/model_registry.json&quot;</span>
-<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
-<span class="nn">...</span>
-</code></pre></div>
+<p>LiteLLM get its cost and model metadata from <a href="https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json">this file</a>. You can override or add data from this file if it's outdated or missing your desired model by including a custom registry file.</p>
 <p>The model registry JSON file should follow LiteLLM's format:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;my-custom-model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -1931,6 +1924,16 @@ There are two ways to do this with <code>litellm</code>:</p>
 <span class="w">    </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chat&quot;</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
+</code></pre></div>
+<p>There are two ways of setting the path to the model registry:</p>
+<ol>
+<li>Set <code>LITELLM_MODEL_REGISTRY_PATH</code> (e.g., <code>mini-extra config set LITELLM_MODEL_REGISTRY_PATH /path/to/model_registry.json</code>)</li>
+<li>Set <code>litellm_model_registry</code> in the agent config file</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">litellm_model_registry</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/model_registry.json&quot;</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nn">...</span>
 </code></pre></div>
 <h2 id="concrete-examples">Concrete examples</h2>
 <div class="admonition success">
