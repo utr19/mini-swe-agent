@@ -1,3 +1,4 @@
+# Identical config file to mini.yaml, but without temperature=0.0
 agent:
   system_template: |
     You are a helpful assistant that can interact with a computer.
@@ -143,7 +144,8 @@ agent:
     Note: In rare cases, if you need to reference a similar format in your command, you might have
     to proceed in two steps, first writing TRIPLEBACKTICKSBASH, then replacing them with ```bash.
   step_limit: 0.
-  cost_limit: 0.
+  cost_limit: 3.
+  mode: confirm
 environment:
   env:
     PAGER: cat
@@ -153,5 +155,4 @@ environment:
     TQDM_DISABLE: '1'
 model:
   model_kwargs:
-    temperature: 0.0
     drop_params: true

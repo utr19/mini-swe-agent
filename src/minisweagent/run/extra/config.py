@@ -12,7 +12,7 @@ from dotenv import set_key, unset_key
 from prompt_toolkit import prompt
 from rich.console import Console
 from rich.rule import Rule
-from typer import Option, Typer
+from typer import Argument, Typer
 
 from minisweagent import global_config_file
 
@@ -25,9 +25,7 @@ app = Typer(
 console = Console(highlight=False)
 
 
-_SETUP_HELP = """Welcome to Mini!
-
-To get started, we need to set up your global config file.
+_SETUP_HELP = """To get started, we need to set up your global config file.
 
 You can edit it manually or use the [bold green]mini-extra config set[/bold green] or [bold green]mini-extra config edit[/bold green] commands.
 
@@ -39,6 +37,8 @@ Here's a few popular models and the required API keys:
 [bold green]o3[/bold green] ([bold green]OPENAI_API_KEY[/bold green])
 
 [bold yellow]You can leave any setting blank to skip it.[/bold yellow]
+
+More information at https://mini-swe-agent.com/latest/quickstart/
 """
 
 
@@ -79,16 +79,22 @@ def setup():
 
 @app.command()
 def set(
-    key: str = Option(..., help="The key to set", prompt=True),
-    value: str = Option(..., help="The value to set", prompt=True),
+    key: str | None = Argument(None, help="The key to set"),
+    value: str | None = Argument(None, help="The value to set"),
 ):
     """Set a key in the global config file."""
+    if key is None:
+        key = prompt("Enter the key to set: ")
+    if value is None:
+        value = prompt(f"Enter the value for {key}: ")
     set_key(global_config_file, key, value)
 
 
 @app.command()
-def unset(key: str = Option(..., help="The key to unset")):
+def unset(key: str | None = Argument(None, help="The key to unset")):
     """Unset a key in the global config file."""
+    if key is None:
+        key = prompt("Enter the key to unset: ")
     unset_key(global_config_file, key)
 
 

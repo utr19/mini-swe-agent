@@ -9,17 +9,19 @@ import re
 import threading
 import time
 import traceback
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
 from rich.spinner import Spinner
 from rich.text import Text
-from textual.app import App, ComposeResult
+from textual.app import App, ComposeResult, SystemCommand
 from textual.binding import Binding
 from textual.containers import Container, Vertical, VerticalScroll
 from textual.css.query import NoMatches
 from textual.events import Key
+from textual.screen import Screen
 from textual.widgets import Footer, Header, Input, Static, TextArea
 
 from minisweagent.agents.default import AgentConfig, DefaultAgent, NonTerminatingException, Submitted
@@ -62,11 +64,12 @@ class TextualAgent(DefaultAgent):
             exit_status, result = super().run(task)
         except Exception as e:
             result = str(e)
+            self.app.call_from_thread(self.app.action_quit)
             print(traceback.format_exc())
-            self.app.call_from_thread(self.app.on_agent_finished, "ERROR", result)
             return "ERROR", result
         else:
             self.app.call_from_thread(self.app.on_agent_finished, exit_status, result)
+        self.app.call_from_thread(self.app.action_quit)
         return exit_status, result
 
     def execute_action(self, action: dict) -> dict:
@@ -132,16 +135,10 @@ class SmartInputContainer(Container):
         self._input_event = threading.Event()
         self._input_result: str | None = None
 
-        self._header_display = Static(
-            "USER INPUT REQUESTED", id="input-header-display", classes="message-header input-request-header"
-        )
-        self._hint_text = Static(
-            "[bold]Enter[/bold] to submit, [bold]Ctrl+T[/bold] to switch to multi-line input, [bold]Tab[/bold] to switch focus with other controls",
-            classes="hint-text",
-        )
+        self._header_display = Static(id="input-header-display", classes="message-header input-request-header")
+        self._hint_text = Static(classes="hint-text")
         self._single_input = Input(placeholder="Type your input...")
-        self._multi_input = TextArea("", show_line_numbers=False, classes="multi-input")
-
+        self._multi_input = TextArea(show_line_numbers=False, classes="multi-input")
         self._input_elements_container = Vertical(
             self._header_display,
             self._hint_text,
@@ -180,7 +177,6 @@ class SmartInputContainer(Container):
         """Internal method to complete the input process."""
         self._input_result = input_text
         self.pending_prompt = None
-        self._header_display.update("USER INPUT REQUESTED")
         self.display = False
         self._single_input.value = ""
         self._multi_input.text = ""
@@ -208,8 +204,13 @@ class SmartInputContainer(Container):
             self._multi_input.text = self._single_input.value
             self._single_input.display = False
             self._multi_input.display = True
-
+            self._hint_text.update(
+                "[reverse][bold][$accent] Ctrl+D [/][/][/] to submit, [reverse][bold][$accent] Tab [/][/][/] to switch focus with other controls"
+            )
         else:
+            self._hint_text.update(
+                "[reverse][bold][$accent] Enter [/][/][/] to submit, [reverse][bold][$accent] Ctrl+T [/][/][/] to switch to multi-line input, [reverse][bold][$accent] Tab [/][/][/] to switch focus with other controls",
+            )
             self._multi_input.display = False
             self._single_input.display = True
 
@@ -240,16 +241,22 @@ class SmartInputContainer(Container):
 
 class AgentApp(App):
     BINDINGS = [
-        Binding("right,l", "next_step", "Step++"),
-        Binding("left,h", "previous_step", "Step--"),
-        Binding("0", "first_step", "Step=0"),
-        Binding("$", "last_step", "Step=-1"),
-        Binding("j,down", "scroll_down", "Scroll down"),
-        Binding("k,up", "scroll_up", "Scroll up"),
-        Binding("q", "quit", "Quit"),
-        Binding("y", "yolo", "Switch to YOLO Mode"),
-        Binding("c", "confirm", "Switch to Confirm Mode"),
-        Binding("u", "human", "Switch to Human Mode"),
+        Binding("right,l", "next_step", "Step++", tooltip="Show next step of the agent"),
+        Binding("left,h", "previous_step", "Step--", tooltip="Show previous step of the agent"),
+        Binding("0", "first_step", "Step=0", tooltip="Show first step of the agent", show=False),
+        Binding("$", "last_step", "Step=-1", tooltip="Show last step of the agent", show=False),
+        Binding("j,down", "scroll_down", "Scroll down", show=False),
+        Binding("k,up", "scroll_up", "Scroll up", show=False),
+        Binding("q,ctrl+q", "quit", "Quit", tooltip="Quit the agent"),
+        Binding("y,ctrl+y", "yolo", "YOLO mode", tooltip="Switch to YOLO Mode (LM actions will execute immediately)"),
+        Binding(
+            "c",
+            "confirm",
+            "CONFIRM mode",
+            tooltip="Switch to Confirm Mode (LM proposes commands and you confirm/reject them)",
+        ),
+        Binding("u,ctrl+u", "human", "HUMAN mode", tooltip="Switch to Human Mode (you can now type commands directly)"),
+        Binding("f1,question_mark", "toggle_help_panel", "Help", tooltip="Show help"),
     ]
 
     def __init__(self, model, env, task: str, **kwargs):
@@ -369,6 +376,15 @@ class AgentApp(App):
         except NoMatches:  # might be called when shutting down
             pass
 
+    # --- Other textual overrides ---
+
+    def get_system_commands(self, screen: Screen) -> Iterable[SystemCommand]:
+        # Add to palette
+        yield from super().get_system_commands(screen)
+        for binding in self.BINDINGS:
+            description = f"{binding.description} (shortcut {' OR '.join(binding.key.split(','))})"  # type: ignore[attr-defined]
+            yield SystemCommand(description, binding.tooltip, binding.action)  # type: ignore[attr-defined]
+
     # --- Textual bindings ---
 
     def action_yolo(self):
@@ -406,3 +422,9 @@ class AgentApp(App):
 
     def action_scroll_up(self) -> None:
         self._vscroll.scroll_to(y=self._vscroll.scroll_target_y - 15)
+
+    def action_toggle_help_panel(self) -> None:
+        if self.query("HelpPanel"):
+            self.action_hide_help_panel()
+        else:
+            self.action_show_help_panel()

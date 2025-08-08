@@ -2,7 +2,9 @@
 <a href="https://mini-swe-agent.com/latest/"><img src="https://github.com/SWE-agent/mini-swe-agent/raw/main/docs/assets/mini-swe-agent-banner.svg" alt="mini-swe-agent banner" style="height: 7em"/></a>
 </div>
 
-<h1>The 100 line AI agent that solves GitHub issues & more</h1>
+# The 100 line AI agent that solves GitHub issues & more
+
+📣 [Run `mini` with GPT-5 and friends: Read here](https://mini-swe-agent.com/latest/quickstart/#gpt-5)
 
 > **Note**: This is a fork of [SWE-agent/mini-swe-agent](https://github.com/SWE-agent/mini-swe-agent) with modifications to support Groq's new models including `moonshotai/kimi-k2-instruct`.
 
@@ -36,7 +38,7 @@ We now ask: **What if SWE-agent was 100x smaller, and still worked nearly as wel
 
 `mini` is for
 
-- **Researchers** who want to **benchmark, fine-tune or RL** without assumptions, bloat, or surprises
+- **Researchers** who want to **[benchmark](https://swe-bench.com), [fine-tune](https://swesmith.com/) or RL** without assumptions, bloat, or surprises
 - **Developers** who like their tools like their scripts: **short, sharp, and readable**
 - **Engineers** who want something **trivial to sandbox & to deploy anywhere**
 
@@ -44,7 +46,7 @@ Here's some details:
 
 - **Minimal**: Just [100 lines of python](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/agents/default.py) (+100 total for [env](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/environments/local.py),
 [model](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/models/litellm_model.py), [script](https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/run/hello_world.py)) — no fancy dependencies!
-- **Powerful:** Resolves 65% of GitHub issues in the [SWE-bench verified benchmark](https://www.swebench.com/) (with Claude Sonnet 4).
+- **Powerful:** Resolves 65% of GitHub issues in the [SWE-bench verified benchmark](https://www.swebench.com/) ([leaderboard](https://swe-bench.com/)).
 - **Convenient:** Comes with UIs that turn this into your daily dev swiss army knife!
 - **Deployable:** In addition to local envs, you can use **docker**, **podman**, **singularity**, **apptainer**, and more
 - **Tested:** [![Codecov](https://img.shields.io/codecov/c/github/swe-agent/mini-swe-agent?style=flat-square)](https://codecov.io/gh/SWE-agent/mini-swe-agent)
@@ -70,6 +72,7 @@ In fact, mini-SWE-agent
 
 This makes it perfect as a baseline system and for a system that puts the language model (rather than
 the agent scaffold) in the middle of our attention.
+You can see the result on the [SWE-bench (bash only)](https://www.swebench.com/) leaderboard, that evaluates the performance of different LMs with `mini`.
 
 </details>
 
@@ -228,7 +231,7 @@ Read more in our [documentation](https://mini-swe-agent.com/latest/):
 * [FAQ](https://mini-swe-agent.com/latest/faq/)
 * [Contribute!](https://mini-swe-agent.com/latest/contributing/)
 
-## Bottom line
+## Attribution
 
 If you found this work helpful, please consider citing the [SWE-agent paper](https://arxiv.org/abs/2405.15793) in your work:
 
@@ -242,7 +245,7 @@ If you found this work helpful, please consider citing the [SWE-agent paper](htt
 }
 ```
 
-More agentic AI:
+Our other projects:
 
 <div align="center">
   <a href="https://github.com/SWE-agent/SWE-agent"><img src="https://github.com/SWE-agent/mini-swe-agent/raw/main/docs/assets/sweagent_logo_text_below.svg" alt="SWE-agent" height="120px"></a>

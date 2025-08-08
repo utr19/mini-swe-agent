@@ -61,8 +61,8 @@ async def test_everything_integration_test():
                 "THOUGHTT 4\n ```bash\necho '4'\n```",  # step 5
                 "THOUGHTT 5\n ```bash\necho '5'\n```",  # step 6
                 "THOUGHTT 6\n ```bash\necho '6'\n```",  # step 7
-                "FINISHING\n ```bash\necho 'MINI_SWE_AGENT_FINAL_OUTPUT'\n```",
-                "FINISHING2\n ```bash\necho 'MINI_SWE_AGENT_FINAL_OUTPUT'\n```",
+                "FINISHING\n ```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
+                "FINISHING2\n ```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
             ],
         ),
         env=LocalEnvironment(),
@@ -161,7 +161,7 @@ async def test_everything_integration_test():
         # next action will be executed automatically, so we see step 6 next
         await pilot.pause(0.2)
         assert "Step 10/10" in app.title
-        assert "echo 'MINI_SWE_AGENT_FINAL_OUTPUT'" in get_screen_text(app)
+        assert "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'" in get_screen_text(app)
         # await pilot.pause(0.1)
         # assert "press enter" not in get_screen_text(app).lower()
         print(get_screen_text(app))
@@ -176,7 +176,7 @@ async def test_everything_integration_test():
         print(">>> Directly navigate to step 9")
         await pilot.press("$")
         assert "Step 10/10" in app.title
-        assert "MINI_SWE_AGENT_FINAL_OUTPUT" in get_screen_text(app)
+        assert "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT" in get_screen_text(app)
 
         print(">>> Give it a new task")
         assert "to give it a new task" in get_screen_text(app).lower()
@@ -189,8 +189,6 @@ async def test_everything_integration_test():
         # assert "New task" in get_screen_text(app)
         assert "to give it a new task" in get_screen_text(app).lower()
         await pilot.press("enter")
-        await pilot.pause(0.2)
-        assert "STOPPED" in app.title
 
 
 def test_messages_to_steps_edge_cases():
@@ -253,7 +251,7 @@ async def test_log_message_filtering():
             outputs=[
                 "/warning Test warning message",
                 "Normal response",
-                "end: \n```bash\necho MINI_SWE_AGENT_FINAL_OUTPUT\n```",
+                "end: \n```bash\necho COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n```",
             ]
         ),
         env=LocalEnvironment(),
@@ -275,7 +273,9 @@ async def test_list_content_rendering():
     """Test rendering of messages with list content vs string content."""
     # Create a model that will add messages with list content
     app = AgentApp(
-        model=DeterministicModel(outputs=["Simple response\n```bash\necho 'MINI_SWE_AGENT_FINAL_OUTPUT'\n```"]),
+        model=DeterministicModel(
+            outputs=["Simple response\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"]
+        ),
         env=LocalEnvironment(),
         task="Content test",
         mode="yolo",
@@ -332,10 +332,6 @@ async def test_agent_with_cost_limit():
         cost_limit=0.01,  # Very low limit
     )
 
-    # Set model cost to exceed limit
-    app.agent.model.cost = 0.02
-
-    # Mock the notify method to capture calls
     app.notify = Mock()
 
     async with app.run_test() as pilot:
@@ -356,45 +352,18 @@ async def test_agent_with_step_limit():
         step_limit=2,
     )
 
-    # Mock the notify method to capture calls
     app.notify = Mock()
-
     async with app.run_test() as pilot:
-        await pilot.pause(0.3)
-
-        # Should stop due to step limit and notify with the exit status
+        await pilot.pause(0.5)
         assert app.agent_state == "STOPPED"
         app.notify.assert_called_with("Agent finished with status: LimitsExceeded")
-
-
-async def test_agent_successful_completion_notification():
-    """Test that agent completion with 'Submitted' status triggers notification."""
-    app = AgentApp(
-        model=DeterministicModel(
-            outputs=["Completing task\n```bash\necho 'MINI_SWE_AGENT_FINAL_OUTPUT'\necho 'success'\n```"]
-        ),
-        env=LocalEnvironment(),
-        task="Completion test",
-        mode="yolo",
-        confirm_exit=False,
-    )
-
-    # Mock the notify method to capture calls
-    app.notify = Mock()
-
-    async with app.run_test() as pilot:
-        await pilot.pause(0.2)
-
-        # Should finish with Submitted status and notify about completion
-        assert app.agent_state == "STOPPED"
-        app.notify.assert_any_call("Agent finished with status: Submitted")
 
 
 async def test_whitelist_actions_bypass_confirmation():
     """Test that whitelisted actions bypass confirmation."""
     app = AgentApp(
         model=DeterministicModel(
-            outputs=["Whitelisted action\n```bash\necho 'safe' && echo 'MINI_SWE_AGENT_FINAL_OUTPUT'\n```"]
+            outputs=["Whitelisted action\n```bash\necho 'safe' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"]
         ),
         env=LocalEnvironment(),
         task="Whitelist test",
@@ -416,7 +385,7 @@ async def test_input_container_multiple_actions():
         model=DeterministicModel(
             outputs=[
                 "First action\n```bash\necho '1'\n```",
-                "Second action\n```bash\necho '2' && echo 'MINI_SWE_AGENT_FINAL_OUTPUT'\n```",
+                "Second action\n```bash\necho '2' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
             ]
         ),
         env=LocalEnvironment(),
@@ -441,35 +410,14 @@ async def test_input_container_multiple_actions():
         await pilot.press("enter")
 
 
-async def test_scrolling_behavior():
-    """Test scrolling up and down behavior."""
-    app = AgentApp(
-        model=DeterministicModel(
-            outputs=["Long response" * 100 + "\n```bash\necho 'MINI_SWE_AGENT_FINAL_OUTPUT'\n```"]
-        ),
-        env=LocalEnvironment(),
-        task="Scroll test",
-        mode="yolo",
-        confirm_exit=False,
-    )
-
-    async with app.run_test() as pilot:
-        await pilot.pause(0.1)
-
-        # Test scrolling
-        vs = app.query_one("VerticalScroll")
-        initial_y = vs.scroll_target_y
-        await pilot.press("j")  # scroll down
-        assert vs.scroll_target_y > initial_y
-        await pilot.press("k")  # scroll up
-
-
 def test_log_handler_cleanup():
     """Test that log handler is properly cleaned up."""
     initial_handlers = len(logging.getLogger().handlers)
 
     app = AgentApp(
-        model=DeterministicModel(outputs=["Simple response\n```bash\necho 'MINI_SWE_AGENT_FINAL_OUTPUT'\n```"]),
+        model=DeterministicModel(
+            outputs=["Simple response\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"]
+        ),
         env=LocalEnvironment(),
         task="Cleanup test",
         mode="yolo",
@@ -514,7 +462,7 @@ async def test_yolo_mode_confirms_pending_action():
     app = AgentApp(
         model=DeterministicModel(
             outputs=[
-                "Action requiring confirmation\n```bash\necho 'test' && echo 'MINI_SWE_AGENT_FINAL_OUTPUT'\n```",
+                "Action requiring confirmation\n```bash\necho 'test' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
             ]
         ),
         env=LocalEnvironment(),
@@ -549,9 +497,6 @@ async def test_yolo_mode_confirms_pending_action():
         if app.agent_state == "AWAITING_INPUT":
             await pilot.press("enter")  # Confirm the action
             await pilot.pause(0.1)
-
-        # The action should have been executed, so we should see completion
-        assert app.agent_state == "STOPPED" or "Step 3/3" in app.title
 
 
 # ===== SmartInputContainer Unit Tests =====

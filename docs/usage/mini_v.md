@@ -20,6 +20,17 @@
 
 ## Command line options
 
+Invocation
+
+```bash
+mini -v [other options]
+```
+
+!!! tip "Default visual mode"
+
+    If you want to use the visual mode by default, you can set the `MSWEA_VISUAL_MODE_DEFAULT` environment variable to `true`
+    (`mini-extra config set MSWEA_VISUAL_MODE_DEFAULT true`).
+
 Useful switches:
 
 - `-h`/`--help`: Show help
@@ -31,11 +42,19 @@ Useful switches:
 
 ## Key bindings
 
-- `q`: Quit the agent
+!!! tip "Focused input fields"
+
+    Whenever you are prompted to enter text, the input field will be focused.
+    You can use `Tab` or `Esc` to switch between the input field controls and the general controls below.
+
+- `f1` or `?`: Show keybinding help
+- `q` (or `ctrl+q`): Quit the agent
 - `c`: Switch to `confirm` mode
-- `y`: Switch to `yolo` mode
-- `h` or `LEFT`: Go back in history
-- `l` or `RIGHT`: Go forward in history
+- `y` (or `ctrl+y`): Switch to `yolo` mode
+- `h` or `LEFT`: Go to previous step of the agent
+- `l` or `RIGHT`: Go to next step of the agent
+- `0`: Go to first step of the agent
+- `$`: Go to last step of the agent
 - `j` or `DOWN`: Scroll down
 - `k` or `UP`: Scroll up
 
