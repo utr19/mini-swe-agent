@@ -7,8 +7,7 @@ on:
       - main
       - check-links*
       - fix-links*
-  schedule:
-    - cron: "0 0,12 * * *"
+
 
 jobs:
   markdown-link-check:
